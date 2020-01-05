@@ -8,14 +8,12 @@ parsing_data = {
     "search_url": "https://nyaa.si/?f=0&c=0_0&q=",
     "row_selector": "//tbody/tr",
     "data_selectors": {
-            "category": "td//a/img[@class='category-icon']/@alt",
-            "name": "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/text()",
-            "size": "(td//a[contains(@href, 'download')]/ancestor::td/following-sibling::td)[1]/text()",
+        "category": "td//a/img[@class='category-icon']/@alt",
+        "name": "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/text()",
+        "size": "(td//a[contains(@href, 'download')]/ancestor::td/following-sibling::td)[1]/text()",
         },
     "next_page_selector": "//*[@class='next']/a/@href",
     "args": sys.argv,
 }
 
 run_parsing(parsing_data)
-
-

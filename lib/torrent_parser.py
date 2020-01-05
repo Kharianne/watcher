@@ -53,11 +53,6 @@ class TorrentParser:
             self.results.append(row_data_dict)
 
     def format_output(self):
-        """
-        Formatting
-        :return:
-        [CATEGORY] NAME (SIZE SEED/LEECH) string
-        """
         print(self.query.replace("\n", "???"))
         for result in self.results:
             print(f"[{result['category']}] {result['name']} ({result['size']})")
@@ -69,8 +64,3 @@ def run_parsing(parsing_data: dict):
         parser.parse_row_data()
         parser.get_next_page_url()
     parser.format_output()
-
-
-
-
-

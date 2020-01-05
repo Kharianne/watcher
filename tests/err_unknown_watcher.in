@@ -1,0 +1,7 @@
+#!@SHELL@
+set -eu
+
+  watcher dummy
+! watcher foobar
+
+# vim: ft=sh :

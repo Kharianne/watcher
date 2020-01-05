@@ -1,0 +1,82 @@
+#!@SHELL@
+set -eu
+
+usage() {
+	cat <<EOF
+Usage: watcher [-hV] [TARGET [ARGS...]]
+
+Checks watch target TARGET (optionaly with ARGS) for changes and prints diff if
+any detected.
+
+Options:
+    -h  Show this help
+    -V  Print version string
+    -v  Verbose mode
+EOF
+}
+
+version() {
+	printf -- 'watcher %s' "@VERSION@"
+}
+
+while getopts hVv opt; do
+	case "$opt" in
+	h)
+		usage
+		exit
+		;;
+	V)
+		version
+		exit
+		;;
+	v)
+		set -x
+		;;
+	*)
+		usage >&2
+		exit 1
+		;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
+if [ -z "${1:-}" ]; then
+	echo >&2 'No TARGET provided.'
+	usage >&2
+	exit 1
+fi
+
+target="$1"
+bin="watcher-$1"
+shift
+
+if ! command -v "$bin" >/dev/null; then
+	printf -- 'No such target exists in the $PATH: %s\n' "$bin"
+	exit 1
+fi
+
+base_dir="${WATCHER_STORE:-~/.watcher}"
+mkdir -p -- "$base_dir"
+
+out=$(
+	echo 'mkstemp(template)' |
+		m4 -D template="${TMPDIR:-/tmp}/watcherXXXXXX"
+)
+trap '[ -e "$out" ] && rm -- "$out"' EXIT
+
+"$bin" "$@" >"$out"
+
+last="$base_dir/$target-$(head -n1 -- "$out")"
+
+if [ ! -e "$last" ]; then
+	sed 1d "$out" > "$last"
+	exit
+fi
+
+if ! sed 1d "$out" | diff -u -- "$last" /dev/stdin >/dev/null; then
+	sed 1d "$out" | diff -u -- "$last" /dev/stdin || :
+	sed 1d "$out" > $last
+fi
+
+# vim: ft=sh :

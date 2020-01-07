@@ -1,0 +1,7 @@
+#!/hint/sh
+
+# yeah yeah not technically safe
+subdir=$(openssl rand -hex 32)
+export WATCHER_STORE="$WATCHER_STORE/$subdir"
+
+# vim: ft=sh :

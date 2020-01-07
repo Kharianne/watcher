@@ -1,0 +1,12 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+export SHOULD_ERROR=1
+
+[ -n "$("$WATCHER_BIN" dummy 2>&1 1>/dev/null)" ]
+[ -z "$("$WATCHER_BIN" dummy 2>/dev/null)" ]
+
+! "$WATCHER_BIN" dummy
+
+# vim: ft=sh :

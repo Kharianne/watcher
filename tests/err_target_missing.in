@@ -1,7 +1,0 @@
-#!@SHELL@
-set -eu
-
-  watcher 2>&1 1>/dev/null | grep -q 'No TARGET provided.'
-! watcher
-
-# vim: ft=sh :

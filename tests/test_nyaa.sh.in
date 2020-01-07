@@ -1,0 +1,10 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+torr='[Moozzi2] Tate no Yuusha no Nariagari BD-BOX (BD 1920x1080 x.264 Flac)'
+
+  "$WATCHER_BIN" nyaa 'Moozzi2 Tate no Yuusha no Nariagari' | grep -qF "$torr"
+! "$WATCHER_BIN" nyaa 'Moozzi2 Tate no Yuusha no Nariagari' | grep -qF "$torr"
+
+# vim: ft=sh :

@@ -1,0 +1,8 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+  "$WATCHER_BIN" dummy
+! "$WATCHER_BIN" foobar
+
+# vim: ft=sh :

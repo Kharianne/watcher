@@ -1,0 +1,17 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+export SHOULD_ID=id-foo
+
+        SHOULD_OUTPUT=foobar "$WATCHER_BIN" dummy
+[ -n "$(SHOULD_OUTPUT=barfoo "$WATCHER_BIN" dummy)" ]
+[ -z "$(SHOULD_OUTPUT=barfoo "$WATCHER_BIN" dummy)" ]
+
+export SHOULD_ID=id-bar
+
+        SHOULD_OUTPUT=foobar "$WATCHER_BIN" dummy
+[ -n "$(SHOULD_OUTPUT=barfoo "$WATCHER_BIN" dummy)" ]
+[ -z "$(SHOULD_OUTPUT=barfoo "$WATCHER_BIN" dummy)" ]
+
+# vim: ft=sh :

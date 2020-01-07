@@ -1,0 +1,8 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+"$WATCHER_BIN" -h | grep -q 'Usage: '
+"$WATCHER_BIN" -h
+
+# vim: ft=sh :

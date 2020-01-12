@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
-
-import sys
-
+from urllib import parse
 from lib.torrent_parser import run_parsing
 
-parser_config = {
-    "base_url": "https://nyaa.si",
-    "search_url": "https://nyaa.si/?f=0&c=0_0&q=",
-    "row_selector": "//tbody/tr",
-    "data_selectors": {
-        "category": "td//a/img[@class='category-icon']/@alt",
-        "name": "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/text()",
-        "size": "(td//a[contains(@href, 'download')]/ancestor::td/following-sibling::td)[1]/text()",
-        "id": "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/@href"
-    },
-    "next_page_selector": "//*[@class='next']/a/@href",
-    "args": sys.argv,
-}
+
+class NyaaConfig:
+    BASE_URL = "https://nyaa.si"
+    ROW_SELECTOR = "//tbody/tr"
+    NEXT_PAGE_SELECTOR = "//*[@class='next']/a/@href"
+
+    DATA_SELECTOR_CATEGORY = \
+        "td//a/img[@class='category-icon']/@alt"
+    DATA_SELECTOR_NAME = \
+        "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/text()"
+    DATA_SELECTOR_SIZE = \
+        "(td//a[contains(@href, 'download')]/ancestor::td/following-sibling::td)[1]/text()"
+    DATA_SELECTOR_ID = \
+        "td//a[contains(@href, 'view') and not(contains(@href, 'comments'))]/@href"
+
+    @staticmethod
+    def first_page(query):
+        return "https://nyaa.si/?f=0&c=0_0&q=" + parse.quote(query, safe='')
+
 
 if __name__ == '__main__':
-    run_parsing(parser_config)
+    run_parsing(NyaaConfig())

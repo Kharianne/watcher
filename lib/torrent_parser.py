@@ -1,112 +1,100 @@
+from dataclasses import dataclass, field
+from typing import List
+
 import requests
 from lxml import html
 import sys
-import json
+import traceback
 
 
-class TorrentParser:
-    def __init__(self, parsing_data):
-        self.parsing_data = parsing_data
-        if len(self.parsing_data['args']) > 2:
-            raise TypeError(f'Expected 1 query argument got '
-                            f'{len(self.parsing_data["args"])-1}')
+class Downloader:
+    @staticmethod
+    def get(url):
         try:
-            self.query = self.parsing_data['args'][1]
-        except Exception as e:
-            print(e, file=sys.stderr)
-            exit(1)
-
-        self.results = []
-        self.tree = None
-        self.has_next_page = True
-        self.next_page_url = None
-
-    def get_tree(self):
-        try:
-            if not self.next_page_url:
-                r = requests.get(self.parsing_data['search_url'] +
-                                 self.query)
-            else:
-                r = requests.get(self.parsing_data["base_url"] +
-                                 self.next_page_url)
-        except Exception as e:
-            print(f'Could not connect to host: {e}', file=sys.stderr)
-            exit(1)
-        else:
-            if r.status_code == 200:
-                self.tree = html.fromstring(r.text)
-            else:
+            r = requests.get(url)
+            if r.status_code != 200:
                 raise Exception(f'Request ended with status code: '
                                 f'{r.status_code}')
+            return r.text
+        except Exception as e:
+            raise RuntimeError("Could not connect to host") from e
 
-    def get_next_page_url(self):
+
+@dataclass
+class TorrentRow:
+    category: str
+    name: str
+    size: str
+    id: str
+
+    def __str__(self):
+        return f'[{self.category}] {self.name} ({self.size}) [{self.id}]'
+
+
+@dataclass
+class ParseResult:
+    next_page_url: str = field(default=None)
+    rows: List[TorrentRow] = field(default_factory=list)
+
+
+class Parser:
+    def __init__(self, config):
+        self.config = config
+
+    def parse(self, page):
+        result = ParseResult()
+
+        tree = html.fromstring(page)
         try:
-            self.next_page_url = self.tree.xpath(
-                self.parsing_data['next_page_selector'])[0]
+            result.next_page_url = self.config.BASE_URL \
+                               + tree.xpath(self.config.NEXT_PAGE_SELECTOR)[0]
         except IndexError:
-            self.has_next_page = False
-        # FIXME: This is fucking useless
-        # self.parsing_data["search_url"] = self.next_page_url
+            pass
 
-    def get_rows(self):
-        self.get_tree()
-        return self.tree.xpath(self.parsing_data["row_selector"])
-
-    def read_rows_until(self, last_id):
-        rows = self.get_rows()
+        rows = tree.xpath(self.config.ROW_SELECTOR)
         for row in rows:
-            data_dict = {
-                "category": None,
-                "name": None,
-                "size": None,
-                "id": None
-            }
-            for key in self.parsing_data["data_selectors"]:
-                if self.parsing_data["data_selectors"][key]:
-                    data_dict[key] = row.xpath(self.parsing_data
-                                                   ["data_selectors"][key])[0]
-            if data_dict["id"] == last_id:
-                return False
-            else:
-                print(data_dict)
-                self.results.append(data_dict)
-        return True
+            result.rows.append(TorrentRow(
+                category=row.xpath(self.config.DATA_SELECTOR_CATEGORY)[0],
+                name=row.xpath(self.config.DATA_SELECTOR_NAME)[0],
+                size=row.xpath(self.config.DATA_SELECTOR_SIZE)[0],
+                id=row.xpath(self.config.DATA_SELECTOR_ID)[0],
+            ))
+        return result
 
-    def format_output(self):
+
+class Driver:
+    def __init__(self, config, query, downloader, parser):
+        self.config = config
+        self.query = query
+        self.downloader = downloader
+        self.parser = parser
+
+    def run(self):
+        torrents = []
+        url = self.config.first_page(self.query)
+        while url:
+            page = self.downloader.get(url)
+            parse_result = self.parser.parse(page)
+            torrents += parse_result.rows
+            url = parse_result.next_page_url
+
         print(self.query.replace("\n", "???"))
-        for result in self.results:
-            print(f"[{result['id']}][{result['category']}] {result['name']} "
-                  f"({result['size']})")
+        for torrent in torrents:
+            print(torrent)
 
 
-def run_parsing(parser_config: dict):
-    with open('storage.json', "r", encoding='utf-8') as f:
-        parser = TorrentParser(parser_config)
-        storage = json.load(f)
-        # TODO: use .get()
-        try:
-            last_id = storage[parser.query]["last_id"]
-        except KeyError:
-            last_id = None
+def run_parsing(config):
+    if len(sys.argv) != 2:
+        print("Too many or not enough arguments.", file=sys.stderr)
+        print("Usage: ./watcher nyaa QUERY", file=sys.stderr)
+        exit(1)
 
-        res = True
-        while parser.has_next_page and res:
-            res = parser.read_rows_until(last_id)
-            parser.get_next_page_url()
-
-        if parser.query not in storage.keys():
-            storage.update({parser.query: {
-                "results": parser.results,
-                "last_id": parser.results[0]["id"] if len(parser.results) > 0
-                else None
-            }})
-        else:
-            storage[parser.query]["results"] = \
-                parser.results + storage[parser.query]["results"]
-            if len(parser.results) > 0:
-                storage[parser.query]["last_id"] = parser.results[0]["id"]
-
-        print(len(storage[parser.query]["results"]))
-
-    with open('storage.json', "w", encoding='utf-8') as f:
-        json.dump(storage, f)
+    query = sys.argv[1]
+    down = Downloader()
+    parser = Parser(config)
+    d = Driver(config, query, down, parser)
+    try:
+        d.run()
+    except Exception:
+        traceback.print_exc()
+        exit(1)

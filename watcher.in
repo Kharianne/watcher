@@ -1,6 +1,8 @@
 #!@SHELL@
 set -eu
 
+export POSIXLY_CORRECT=1
+
 usage() {
 	cat <<EOF
 Usage: watcher [-hV] [TARGET [ARGS...]]
@@ -16,7 +18,7 @@ EOF
 }
 
 version() {
-	printf -- 'watcher %s' "@VERSION@"
+	printf -- 'watcher %s\n' '@VERSION@'
 }
 
 while getopts hVv opt; do
@@ -47,36 +49,47 @@ if [ -z "${1:-}" ]; then
 	exit 1
 fi
 
+: "${WATCHER_LIBEXECDIR:="@libexecdir@"}"
+
 target="$1"
-bin="watcher-$1"
 shift
 
-if ! command -v "$bin" >/dev/null; then
-	printf -- 'No such target exists in the $PATH: %s\n' "$bin"
-	exit 1
+bin="$WATCHER_LIBEXECDIR/watcher/watcher-$target"
+if [ ! -e "$bin" ]; then
+	if ! bin=$(command -v "watcher-$target"); then
+		printf -- 'No such target: %s\n' "$target"
+		exit 1
+	fi
 fi
 
-base_dir="${WATCHER_STORE:-~/.watcher}"
-mkdir -p -- "$base_dir"
+cleanup() {
+	if [ -e "$out" ]; then
+		rm -- "$out"
+	fi
+}
+trap cleanup EXIT
+
+: "${WATCHER_STORE:=~/.watcher}"
+mkdir -p -- "$WATCHER_STORE"
 
 out=$(
 	echo 'mkstemp(template)' |
 		m4 -D template="${TMPDIR:-/tmp}/watcherXXXXXX"
 )
-trap '[ -e "$out" ] && rm -- "$out"' EXIT
 
 "$bin" "$@" >"$out"
 
-last="$base_dir/$target-$(head -n1 -- "$out")"
-
-if [ ! -e "$last" ]; then
-	sed 1d "$out" > "$last"
-	exit
+id=$(head -n1 -- "$out")
+if [ "$id" != "${id#*/*}" ]; then
+	printf 'Invalid ID: %s\n' "$id"
 fi
+last="$WATCHER_STORE/$id"
+
+[ -e "$last" ] || touch -- "$last"
 
 if ! sed 1d "$out" | diff -u -- "$last" /dev/stdin >/dev/null; then
 	sed 1d "$out" | diff -u -- "$last" /dev/stdin || :
-	sed 1d "$out" > $last
+	sed 1d "$out" > "$last"
 fi
 
 # vim: ft=sh :

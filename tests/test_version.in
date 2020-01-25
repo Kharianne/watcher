@@ -1,6 +1,0 @@
-#!@SHELL@
-set -eu
-
-[ "$(watcher -V)" = "watcher @VERSION@" ]
-
-# vim: ft=sh :

@@ -1,0 +1,7 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+[ "$("$WATCHER_BIN" -V)" = "watcher @VERSION@" ]
+
+# vim: ft=sh :

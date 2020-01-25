@@ -1,0 +1,10 @@
+#!@SHELL@
+set -eux
+. "@srcdir@/init_test"
+
+export SHOULD_ID=this/is/invalid/id
+
+! "$WATCHER_BIN" dummy
+  "$WATCHER_BIN" dummy 2>&1 | grep -qF 'Invalid ID: '
+
+# vim: ft=sh :

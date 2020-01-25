@@ -1,7 +1,0 @@
-#!@SHELL@
-set -eu
-
-watcher -h | grep -q 'Usage: '
-watcher -h
-
-# vim: ft=sh :

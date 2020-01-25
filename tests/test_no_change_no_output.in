@@ -1,8 +1,0 @@
-#!@SHELL@
-set -eu
-
-        SHOULD_OUTPUT=foobar watcher dummy
-[ -z "$(SHOULD_OUTPUT=foobar watcher dummy)" ]
-[ -z "$(SHOULD_OUTPUT=foobar watcher dummy)" ]
-
-# vim: ft=sh :

@@ -3,9 +3,12 @@
 /aclocal.m4
 /aclocal.m4
 /autom4te.cache/
+/build
 /build-aux/
 /config.log
 /config.status
 /configure
 /watcher
 /watcher-dummy
+
+/watcher-*.tar.*

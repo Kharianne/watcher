@@ -136,7 +136,7 @@ def run_parsing(config):
     try:
         config.store_base = os.environ['WATCHER_STORE']
     except:
-        print("Env variable WATCHER_STORE is missing!")
+        print("Env variable WATCHER_STORE is missing!", file=sys.stderr)
         exit(1)
 
     query = sys.argv[1]

@@ -4,23 +4,11 @@ import pickle
 from dataclasses import dataclass, field
 from typing import List
 
-import requests
+from lib.downloader import Downloader
 from lxml import html
 import sys
 import traceback
-
-
-class Downloader:
-    @staticmethod
-    def get(url):
-        try:
-            r = requests.get(url)
-            if r.status_code != 200:
-                raise Exception(f'Request ended with status code: '
-                                f'{r.status_code}')
-            return r.text
-        except Exception as e:
-            raise RuntimeError("Could not connect to host") from e
+from lib.pickling import Pickling
 
 
 @dataclass
@@ -77,29 +65,9 @@ class Driver:
         self.downloader = downloader
         self.parser = parser
 
-    def _safe_name(self, name):
-        return str(base64.urlsafe_b64encode(name.encode("utf-8")), "utf-8")
-
-    def _pickle_name(self):
-        subdir = self._safe_name(self.config.BASE_URL)
-        fname = self._safe_name(self.query)
-        return f'{self.config.store_base}/torrents/{subdir}/{fname}'
-
-    def _load_pickle(self):
-        try:
-            with open(self._pickle_name(), 'rb') as f:
-                return pickle.load(f)
-        except FileNotFoundError:
-            return []
-
-    def _save_pickle(self, torrents):
-            dir = os.path.dirname(self._pickle_name())
-            os.makedirs(dir, exist_ok=True)
-            with open(self._pickle_name(), 'wb') as f:
-                pickle.dump(torrents, f)
-
     def run(self):
-        storage = self._load_pickle()
+        pickle = Pickling(self.query, self.config)
+        storage = pickle.load_pickle()
         try:
             latest_id = storage[0].id
         except IndexError:
@@ -124,7 +92,7 @@ class Driver:
         for row in storage:
             print(row)
 
-        self._save_pickle(storage)
+        pickle.save_pickle(storage)
 
 
 def run_parsing(config):

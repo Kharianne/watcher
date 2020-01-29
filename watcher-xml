@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+from lib.xml_parser import run_parsing
+
+if __name__ == '__main__':
+    run_parsing()

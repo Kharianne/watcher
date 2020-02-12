@@ -6,7 +6,7 @@ import base64
 
 class Parser:
 
-    def parse(self, page, xpath):
+    def parse_xml(self, page, xpath):
         tree = etree.fromstring(page)
         tree = self._strip_namespaces(tree)
         return [elem.text for elem in tree.xpath(xpath)]
@@ -23,8 +23,8 @@ class Driver:
 
     def run(self, url, xpath):
         page = Downloader.get(url).encode('ascii')
-        results = Parser().parse(page, xpath)
-        print(self._result_id(url,xpath))
+        results = Parser().parse_xml(page, xpath)
+        print(self._result_id(url, xpath))
         for result in results:
             print(result)
 
